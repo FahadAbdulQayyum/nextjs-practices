@@ -108,7 +108,7 @@ export default function CountDownTimer() {
         <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
             {/* Timer box container */}
             {/* <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 w-full max-w-md"> */}
-            <div className="bg-white dark:bg-slate-600 shadow-lg rounded-lg p-9 w-full max-w-md border border-orange-500 relative">
+            <div className="bg-white dark:bg-slate-600 shadow-lg rounded-lg p-9 w-full max-w-lg border border-orange-500 relative">
                 {/* Title of the countdown timer */}
                 <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200 text-center">
                     Countdown Timer
@@ -126,11 +126,11 @@ export default function CountDownTimer() {
                         placeholder="Enter duration in seconds"
                         value={duration}
                         onChange={handleDurationChange}
-                        className="flex-1 mr-4 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                        className="flex-1 mr-8 mt-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
                     />
                 </div>
                 {/* Buttons to start, pause, and reset the timer */}
-                <div className="flex flex-col justify-center gap-4 absolute right-1 top-20">
+                <div className="flex flex-col justify-center gap-4 absolute right-4 top-20">
                     <Button
                         onClick={handleSetDuration}
                         variant="outline"
