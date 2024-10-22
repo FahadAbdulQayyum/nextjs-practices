@@ -1,170 +1,146 @@
-
 "use client"; // Enables client-side rendering for this component
 
-// Importing necessary hooks and components from React and custom components
-import { useState, useEffect, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
+// Import necessary hooks from React
+import { useState, ChangeEvent } from "react";
+
+// Import custom UI components from the UI directory
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-// Type definition for the NumberGuessingComponent's state
-interface NumberGuessingState {
-    gameStarted: boolean;
-    gameOver: boolean;
-    paused: boolean;
-    targetNumber: number;
-    userGuess: number | string;
-    attempts: number;
-}
+// Default export of the CalculatorComponent function
+export default function Calculator() {
+    // State hooks for managing input numbers and the result
+    const [num1, setNum1] = useState<string>("");
+    const [num2, setNum2] = useState<string>("");
+    const [result, setResult] = useState<string>("");
 
-// Defining the NumberGuessingComponent function component
-export default function NumberGuessing(): JSX.Element {
-    // State variables to manage the game state
-    const [gameStarted, setGameStarted] = useState<boolean>(false); // Indicates if the game has started
-    const [gameOver, setGameOver] = useState<boolean>(false); // Indicates if the game is over
-    const [paused, setPaused] = useState<boolean>(false); // Indicates if the game is paused
-    const [targetNumber, setTargetNumber] = useState<number>(0); // The number to be guessed
-    const [userGuess, setUserGuess] = useState<number | string>(""); // The user's guess (can be a number or an empty string)
-    const [attempts, setAttempts] = useState<number>(0); // Number of attempts made by the user
-
-    // useEffect to generate a new target number when the game starts or resumes
-    useEffect(() => {
-        if (gameStarted && !paused) {
-            const randomNumber: number = Math.floor(Math.random() * 10) + 1; // Generate a random number between 1 and 10
-            setTargetNumber(randomNumber); // Set the target number
-        }
-    }, [gameStarted, paused]); // Dependencies: gameStarted and paused
-
-    // Function to handle the start of the game
-    const handleStartGame = (): void => {
-        setGameStarted(true); // Start the game
-        setGameOver(false); // Reset the game over state
-        setAttempts(0); // Reset the attempts counter
-        setPaused(false); // Ensure the game is not paused
+    // Handler for updating num1 state on input change
+    const handleNum1Change = (e: ChangeEvent<HTMLInputElement>): void => {
+        setNum1(e.target.value);
     };
 
-    // Function to handle pausing the game
-    const handlePauseGame = (): void => {
-        setPaused(true); // Pause the game
+    // Handler for updating num2 state on input change
+    const handleNum2Change = (e: ChangeEvent<HTMLInputElement>): void => {
+        setNum2(e.target.value);
     };
 
-    // Function to handle resuming the game
-    const handleResumeGame = (): void => {
-        setPaused(false); // Resume the game
+    // Function to perform addition and set the result
+    const add = (): void => {
+        setResult((parseFloat(num1) + parseFloat(num2)).toString());
     };
 
-    // Function to handle the user's guess
-    const handleGuess = (): void => {
-        if (typeof userGuess === "number" && userGuess === targetNumber) {
-            setGameOver(true); // If the guess is correct, end the game
+    // Function to perform subtraction and set the result
+    const subtract = (): void => {
+        setResult((parseFloat(num1) - parseFloat(num2)).toString());
+    };
+
+    // Function to perform multiplication and set the result
+    const multiply = (): void => {
+        setResult((parseFloat(num1) * parseFloat(num2)).toString());
+    };
+
+    // Function to perform division and set the result
+    const divide = (): void => {
+        if (parseFloat(num2) !== 0) {
+            setResult((parseFloat(num1) / parseFloat(num2)).toString());
         } else {
-            setAttempts(attempts + 1); // Increment the attempts counter
+            setResult("Error: Division by zero");
         }
     };
 
-    // Function to handle restarting the game
-    const handleTryAgain = (): void => {
-        setGameStarted(false); // Reset the game state
-        setGameOver(false); // Reset the game over state
-        setUserGuess(""); // Clear the user's guess
-        setAttempts(0); // Reset the attempts counter
+    // Function to clear the inputs and result
+    const clear = (): void => {
+        setNum1("");
+        setNum2("");
+        setResult("");
     };
 
-    // Function to handle input change for user's guess
-    const handleUserGuessChange = (e: ChangeEvent<HTMLInputElement>): void => {
-        setUserGuess(parseInt(e.target.value));
-    };
-
-    // JSX to render the game UI
+    // JSX return statement rendering the calculator UI
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-gray-800 to-black">
-            {/* Main container for the game */}
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                {/* Title of the game */}
-                <h1 className="text-3xl font-bold text-center mb-2 text-black">
-                    Number Guessing Game
-                </h1>
-                {/* Description of the game */}
-                <p className="text-center text-black mb-4">
-                    Try to guess the number between 1 and 10!
-                </p>
-                {/* Conditional rendering: show start button if game hasn't started */}
-                {!gameStarted && (
-                    <div className="flex justify-center mb-4">
-                        {/* Button to start the game */}
+        <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+            {/* Center the calculator within the screen */}
+            <Card className="w-full max-w-md p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
+                {/* Card header with title */}
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold">
+                        Simple Calculator
+                    </CardTitle>
+                </CardHeader>
+                {/* Card content including inputs, buttons, and result display */}
+                <CardContent className="space-y-4">
+                    {/* Input fields for numbers */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col space-y-2">
+                            <Label htmlFor="num1">Number 1</Label>
+                            <Input
+                                id="num1"
+                                type="number"
+                                value={num1}
+                                onChange={handleNum1Change}
+                                placeholder="Enter a number"
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-2">
+                            <Label htmlFor="num2">Number 2</Label>
+                            <Input
+                                id="num2"
+                                type="number"
+                                value={num2}
+                                onChange={handleNum2Change}
+                                placeholder="Enter a number"
+                            />
+                        </div>
+                    </div>
+                    {/* Buttons for arithmetic operations */}
+                    <div className="grid grid-cols-4 gap-2">
                         <Button
-                            onClick={handleStartGame}
-                            className="bg-black hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                            variant="outline"
+                            className="text-2xl font-bold text-gray-700 dark:text-gray-300"
+                            onClick={add}
                         >
-                            Start Game
+                            +
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="text-2xl font-bold text-gray-700 dark:text-gray-300"
+                            onClick={subtract}
+                        >
+                            -
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="text-2xl font-bold text-gray-700 dark:text-gray-300"
+                            onClick={multiply}
+                        >
+                            *
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="text-2xl font-bold text-gray-700 dark:text-gray-300"
+                            onClick={divide}
+                        >
+                            /
                         </Button>
                     </div>
-                )}
-                {/* Conditional rendering: show game controls if game started and not over */}
-                {gameStarted && !gameOver && (
-                    <div>
-                        <div className="flex justify-center mb-4">
-                            {/* Button to resume the game if paused */}
-                            {paused ? (
-                                <Button
-                                    onClick={handleResumeGame}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Resume
-                                </Button>
-                            ) : (
-                                /* Button to pause the game */
-                                <Button
-                                    onClick={handlePauseGame}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Pause
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="flex justify-center mb-4">
-                            {/* Input field for user's guess */}
-                            <Input
-                                type="number"
-                                value={userGuess}
-                                onChange={handleUserGuessChange}
-                                className="bg-gray-100 border border-gray-300 rounded-lg py-2 px-4 w-full max-w-xs"
-                                placeholder="Enter your guess"
-                            />
-                            {/* Button to submit the guess */}
-                            <Button
-                                onClick={handleGuess}
-                                className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded ml-4"
-                            >
-                                Guess
-                            </Button>
-                        </div>
-                        <div className="text-center text-black">
-                            {/* Display number of attempts */}
-                            <p>Attempts: {attempts}</p>
-                        </div>
+                    {/* Display the result */}
+                    <div className="flex flex-col space-y-2">
+                        <Label htmlFor="result">Result</Label>
+                        <Input
+                            id="result"
+                            type="text"
+                            value={result}
+                            placeholder="Result"
+                            readOnly
+                        />
                     </div>
-                )}
-                {/* Conditional rendering: show game over message if game is over */}
-                {gameOver && (
-                    <div>
-                        <div className="text-center mb-4 text-black">
-                            {/* Game over message */}
-                            <h2 className="text-2xl font-bold">Game Over!</h2>
-                            <p>You guessed the number in {attempts} attempts.</p>
-                        </div>
-                        <div className="flex justify-center">
-                            {/* Button to try the game again */}
-                            <Button
-                                onClick={handleTryAgain}
-                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-                            >
-                                Try Again
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </div>
+                    {/* Clear button to reset inputs and result */}
+                    <Button variant="outline" className="w-full" onClick={clear}>
+                        Clear
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
 }
