@@ -12,6 +12,9 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        'digital': ['digital-7', 'sans-serif'], // Add your custom font here
+      },
     },
   },
   plugins: [],

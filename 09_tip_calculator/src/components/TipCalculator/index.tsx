@@ -2,74 +2,102 @@
 "use client"; // Enables client-side rendering for this component
 
 // Import necessary hooks from React
-import { useState, useEffect, useMemo } from "react";
+import { useState, ChangeEvent } from "react";
 
 // Import custom UI components from the UI directory
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Default export of the DigitalClockComponent function
-export default function DigitalClock() {
-    // State hooks for managing current time, time format (24-hour or 12-hour), and component mount status
-    const [time, setTime] = useState<Date>(new Date());
-    const [is24Hour, setIs24Hour] = useState<boolean>(true);
-    const [mounted, setMounted] = useState<boolean>(false);
+// Default export of the TipCalculatorComponent function
+export default function TipCalculator() {
+  // State hooks for managing the bill amount, tip percentage, tip amount, and total amount
+  const [billAmount, setBillAmount] = useState<number | null>(null);
+  const [tipPercentage, setTipPercentage] = useState<number | null>(null);
+  const [tipAmount, setTipAmount] = useState<number>(0);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
-    // Effect hook to run on component mount
-    useEffect(() => {
-        setMounted(true); // Set mounted status to true
-        const interval = setInterval(() => {
-            setTime(new Date()); // Update the time every second
-        }, 1000);
-        return () => clearInterval(interval); // Cleanup the interval on component unmount
-    }, []);
+  // Handler for updating bill amount state on input change
+  const handleBillAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setBillAmount(parseFloat(e.target.value));
+  };
 
-    // Memoized computation of formatted time to avoid unnecessary recalculations
-    const formattedTime = useMemo<string>(() => {
-        if (!mounted) return ""; // Don't render time on the server
-        const hours = is24Hour
-            ? time.getHours().toString().padStart(2, "0") // Format hours in 24-hour format
-            : (time.getHours() % 12 || 12).toString().padStart(2, "0"); // Format hours in 12-hour format
-        const minutes = time.getMinutes().toString().padStart(2, "0"); // Format minutes
-        const seconds = time.getSeconds().toString().padStart(2, "0"); // Format seconds
-        return `${hours}:${minutes}:${seconds}`; // Return formatted time string
-    }, [time, is24Hour, mounted]); // Dependencies to re-run the memoized function
+  // Handler for updating tip percentage state on input change
+  const handleTipPercentageChange = (
+    e: ChangeEvent<HTMLInputElement>
+  ): void => {
+    setTipPercentage(parseFloat(e.target.value));
+  };
 
-    // JSX return statement rendering the digital clock UI
-    return (
-        <div className="flex items-center justify-center h-screen">
-            {/* Center the digital clock within the screen */}
-            <Card className="p-8 shadow-lg rounded-2xl">
-                <div className="flex flex-col items-center justify-center">
-                    {/* Header with title */}
-                    <div className="text-2xl font-bold tracking-tight">Digital Clock</div>
-                    {/* Description */}
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                        Display current time in hours, minutes, and seconds.
-                    </div>
-                    {/* Display the formatted time */}
-                    <div className="text-6xl font-bold tracking-tight">
-                        {formattedTime}
-                    </div>
-                    {/* Buttons to switch between 24-hour and 12-hour formats */}
-                    <div className="mt-4 flex items-center">
-                        <Button
-                            variant={is24Hour ? "default" : "outline"}
-                            onClick={() => setIs24Hour(true)}
-                            className="mr-2 font-bold"
-                        >
-                            24-Hour Format
-                        </Button>
-                        <Button
-                            variant={!is24Hour ? "default" : "outline"}
-                            onClick={() => setIs24Hour(false)}
-                            className="mr-2 font-bold"
-                        >
-                            12-Hour Format
-                        </Button>
-                    </div>
-                </div>
-            </Card>
-        </div>
-    );
+  // Function to calculate the tip and total amounts
+  const calculateTip = (): void => {
+    if (billAmount !== null && tipPercentage !== null) {
+      const tip = billAmount * (tipPercentage / 100); // Calculate the tip amount
+      setTipAmount(tip); // Set the tip amount state
+      setTotalAmount(billAmount + tip); // Set the total amount state
+    }
+  };
+
+  // JSX return statement rendering the tip calculator UI
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Center the tip calculator card within the screen */}
+      <Card className="w-full max-w-md p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
+        <CardHeader>
+          {/* Header with title and description */}
+          <CardTitle>Tip Calculator</CardTitle>
+          <CardDescription>
+            Enter the bill amount and tip percentage to calculate the tip and
+            total.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Input for bill amount */}
+          <div className="grid gap-2">
+            <Label htmlFor="bill-amount">Bill Amount</Label>
+            <Input
+              id="bill-amount"
+              type="number"
+              placeholder="Enter bill amount"
+              value={billAmount !== null ? billAmount : ""}
+              onChange={handleBillAmountChange}
+            />
+          </div>
+          {/* Input for tip percentage */}
+          <div className="grid gap-2">
+            <Label htmlFor="tip-percentage">Tip Percentage</Label>
+            <Input
+              id="tip-percentage"
+              type="number"
+              placeholder="Enter tip percentage"
+              value={tipPercentage !== null ? tipPercentage : ""}
+              onChange={handleTipPercentageChange}
+            />
+          </div>
+          {/* Button to calculate tip */}
+          <Button onClick={calculateTip}>Calculate</Button>
+        </CardContent>
+        <CardFooter className="grid gap-2">
+          {/* Display the calculated tip amount */}
+          <div className="flex items-center justify-between">
+            <span>Tip Amount:</span>
+            <span className="font-bold">${tipAmount.toFixed(2)}</span>
+          </div>
+          {/* Display the calculated total amount */}
+          <div className="flex items-center justify-between">
+            <span>Total Amount:</span>
+            <span className="font-bold">${totalAmount.toFixed(2)}</span>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }

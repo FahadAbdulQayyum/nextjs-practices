@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 // Import custom UI components from the UI directory
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+// import from "../../app/app.css";
 
 // Default export of the DigitalClockComponent function
 export default function DigitalClock() {
@@ -48,7 +49,8 @@ export default function DigitalClock() {
                         Display current time in hours, minutes, and seconds.
                     </div>
                     {/* Display the formatted time */}
-                    <div className="text-6xl font-bold tracking-tight">
+                    {/* <div className="text-6xl font-bold tracking-tight font-digital"> */}
+                    <div className="text-6xl font-bold tracking-tight font-digital text-lime-500">
                         {formattedTime}
                     </div>
                     {/* Buttons to switch between 24-hour and 12-hour formats */}
@@ -69,7 +71,7 @@ export default function DigitalClock() {
                         </Button>
                     </div>
                 </div>
-            </Card>
-        </div>
+            </Card >
+        </div >
     );
 }
