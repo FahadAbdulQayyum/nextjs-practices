@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import MovieSearch from "@/components/MovieSearch";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <MovieSearch />
     </div>
   )
 }

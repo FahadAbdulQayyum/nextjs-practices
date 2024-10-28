@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import MemeGenerator from "@/components/MemeGenerator";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <MemeGenerator />
     </div>
   )
 }

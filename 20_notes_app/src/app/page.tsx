@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import NotesApp from "@/components/NotesApp";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <NotesApp />
     </div>
   )
 }

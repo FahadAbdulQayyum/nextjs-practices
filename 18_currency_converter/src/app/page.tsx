@@ -1,4 +1,4 @@
-import UnitConverter from "@/components/UnitConverter";
+import CurrencyConverter from "@/components/UnitConverter";
 
 export default function Home() {
   return (

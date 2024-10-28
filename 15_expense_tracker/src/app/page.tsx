@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import ExpenseTracker from "@/components/ExpenseTracker";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <ExpenseTracker />
     </div>
   )
 }

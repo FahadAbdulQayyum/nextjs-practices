@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import PromodoroTimer from "@/components/PromodoroTimer";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <PromodoroTimer />
     </div>
   )
 }

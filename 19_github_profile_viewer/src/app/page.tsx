@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import GithubProfileViewer from "@/components/GithubProfileViewer";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <GithubProfileViewer />
     </div>
   )
 }
