@@ -1,9 +1,9 @@
-import CurrencyConverter from "@/components/UnitConverter";
+import CurrencyConverter from "@/components/CurrencyConverter";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <CurrencyConverter />
     </div>
   )
 }
