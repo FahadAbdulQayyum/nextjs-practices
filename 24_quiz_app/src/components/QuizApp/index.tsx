@@ -1,216 +1,166 @@
 "use client"; // Enables client-side rendering for this component
 
-// Import necessary hooks from React
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect } from "react"; // Import useState and useEffect hooks from React
+import { Button } from "@/components/ui/button"; // Import custom Button component
+import ClipLoader from "react-spinners/ClipLoader";
 
-// Import custom UI components from the UI directory
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
-// Conversion rates for various units categorized by length, weight, and volume
-const conversionRates: Record<string, Record<string, number>> = {
-  length: {
-    "Millimeters (mm)": 1,
-    "Centimeters (cm)": 10,
-    "Meters (m)": 1000,
-    "Kilometers (km)": 1000000,
-    "Inches (in)": 25.4,
-    "Feet (ft)": 304.8,
-    "Yards (yd)": 914.4,
-    "Miles (mi)": 1609344,
-  },
-  weight: {
-    "Grams (g)": 1,
-    "Kilograms (kg)": 1000,
-    "Ounces (oz)": 28.3495,
-    "Pounds (lb)": 453.592,
-  },
-  volume: {
-    "Milliliters (ml)": 1,
-    "Liters (l)": 1000,
-    "Fluid Ounces (fl oz)": 29.5735,
-    "Cups (cup)": 240,
-    "Pints (pt)": 473.176,
-    "Quarts (qt)": 946.353,
-    "Gallons (gal)": 3785.41,
-  },
+// Define the Answer type
+type Answer = {
+  text: string;
+  isCorrect: boolean;
 };
 
-// Unit types categorized by length, weight, and volume
-const unitTypes: Record<string, string[]> = {
-  length: [
-    "Millimeters (mm)",
-    "Centimeters (cm)",
-    "Meters (m)",
-    "Kilometers (km)",
-    "Inches (in)",
-    "Feet (ft)",
-    "Yards (yd)",
-    "Miles (mi)",
-  ],
-  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lb)"],
-  volume: [
-    "Milliliters (ml)",
-    "Liters (l)",
-    "Fluid Ounces (fl oz)",
-    "Cups (cup)",
-    "Pints (pt)",
-    "Quarts (qt)",
-    "Gallons (gal)",
-  ],
+// Define the Question type
+type Question = {
+  question: string;
+  answers: Answer[];
 };
 
-// Default export of the UnitConverterComponent function
-export default function UnitConverter() {
-  // State hooks for managing input value, selected units, and the converted value
-  const [inputValue, setInputValue] = useState<number | null>(null);
-  const [inputUnit, setInputUnit] = useState<string | null>(null);
-  const [outputUnit, setOutputUnit] = useState<string | null>(null);
-  const [convertedValue, setConvertedValue] = useState<number | null>(null);
+// Define the QuizState type
+type QuizState = {
+  currentQuestion: number;
+  score: number;
+  showResults: boolean;
+  questions: Question[];
+  isLoading: boolean;
+};
 
-  // Handler for updating the input value state on input change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(parseFloat(e.target.value));
-  };
+export default function QuizApp() {
+  // State to manage the quiz
+  const [state, setState] = useState<QuizState>({
+    currentQuestion: 0,
+    score: 0,
+    showResults: false,
+    questions: [],
+    isLoading: true,
+  });
 
-  // Handler for updating the input unit state on select change
-  const handleInputUnitChange = (value: string): void => {
-    setInputUnit(value);
-  };
-
-  // Handler for updating the output unit state on select change
-  const handleOutputUnitChange = (value: string): void => {
-    setOutputUnit(value);
-  };
-
-  // Function to convert the input value to the selected output unit
-  const convertValue = (): void => {
-    if (inputValue !== null && inputUnit && outputUnit) {
-      let unitCategory: string | null = null;
-
-      // Determine the unit category (length, weight, volume)
-      for (const category in unitTypes) {
-        if (
-          unitTypes[category].includes(inputUnit) &&
-          unitTypes[category].includes(outputUnit)
-        ) {
-          unitCategory = category;
-          break;
-        }
+  // useEffect to fetch quiz questions from API when the component mounts
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch(
+          "https://opentdb.com/api.php?amount=10&type=multiple"
+        );
+        const data = await response.json();
+        const questions = data.results.map((item: any) => {
+          const incorrectAnswers = item.incorrect_answers.map(
+            (answer: string) => ({
+              text: answer,
+              isCorrect: false,
+            })
+          );
+          const correctAnswer = {
+            text: item.correct_answer,
+            isCorrect: true,
+          };
+          return {
+            question: item.question,
+            answers: [...incorrectAnswers, correctAnswer].sort(
+              () => Math.random() - 0.5
+            ),
+          };
+        });
+        setState((prevState) => ({
+          ...prevState,
+          questions,
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.error("Failed to fetch questions:", error);
       }
+    };
 
-      // Perform the conversion if the units are compatible
-      if (unitCategory) {
-        const baseValue = inputValue * conversionRates[unitCategory][inputUnit];
-        const result = baseValue / conversionRates[unitCategory][outputUnit];
-        setConvertedValue(result);
-      } else {
-        setConvertedValue(null);
-        alert("Incompatible unit types selected."); // Alert if units are incompatible
-      }
+    fetchQuestions();
+  }, []);
+
+  // Function to handle answer click
+  const handleAnswerClick = (isCorrect: boolean): void => {
+    if (isCorrect) {
+      setState((prevState) => ({ ...prevState, score: prevState.score + 1 }));
+    }
+
+    const nextQuestion = state.currentQuestion + 1;
+    if (nextQuestion < state.questions.length) {
+      setState((prevState) => ({
+        ...prevState,
+        currentQuestion: nextQuestion,
+      }));
     } else {
-      setConvertedValue(null);
-      alert("Please fill all fields."); // Alert if any field is empty
+      setState((prevState) => ({ ...prevState, showResults: true }));
     }
   };
 
-  // JSX return statement rendering the unit converter UI
+  // Function to reset the quiz
+  const resetQuiz = (): void => {
+    setState({
+      currentQuestion: 0,
+      score: 0,
+      showResults: false,
+      questions: state.questions,
+      isLoading: false,
+    });
+  };
+
+  // Show loading spinner if the questions are still loading
+  if (state.isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground">
+        <ClipLoader />
+        <p>Loading quiz questions, please wait...</p>
+      </div>
+    );
+  }
+
+  // Show message if no questions are available
+  if (state.questions.length === 0) {
+    return <div>No questions available.</div>;
+  }
+
+  // Get the current question
+  const currentQuestion = state.questions[state.currentQuestion];
+
+  // JSX return statement rendering the Quiz UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Center the unit converter card within the screen */}
-      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-1 text-center">Unit Converter</h1>
-        <p className="text-sm mb-8 text-center">
-          Convert values between different units.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Select for input unit */}
-          <div className="space-y-2">
-            <Label htmlFor="input-unit">From</Label>
-            <Select onValueChange={handleInputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Select for output unit */}
-          <div className="space-y-2">
-            <Label htmlFor="output-unit">To</Label>
-            <Select onValueChange={handleOutputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Input for value to convert */}
-          <div className="space-y-2 col-span-2">
-            <Label htmlFor="input-value">Value</Label>
-            <Input
-              id="input-value"
-              type="number"
-              placeholder="Enter value"
-              value={inputValue || ""}
-              onChange={handleInputChange}
-              className="w-full"
-            />
-          </div>
-          {/* Button to trigger conversion */}
-          <Button
-            type="button"
-            className="col-span-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={convertValue}
-          >
-            Convert
+    <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground">
+      {state.showResults ? (
+        // Show results if the quiz is finished
+        <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-4">Results</h2>
+          <p className="text-lg mb-4">
+            You scored {state.score} out of {state.questions.length}
+          </p>
+          <Button onClick={resetQuiz} className="w-full">
+            Try Again
           </Button>
         </div>
-        {/* Display the converted value */}
-        <div className="mt-6 text-center">
-          <div className="text-4xl font-bold">
-            {convertedValue !== null ? convertedValue.toFixed(2) : "0"}
+      ) : (
+        // Show current question and answers if the quiz is in progress
+        <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-4">
+            Question {state.currentQuestion + 1}/{state.questions.length}
+          </h2>
+          <p
+            className="text-lg mb-4"
+            dangerouslySetInnerHTML={{ __html: currentQuestion.question }}
+          />
+          <div className="grid gap-4">
+            {currentQuestion.answers.map((answer, index) => (
+              <Button
+                key={index}
+                onClick={() => handleAnswerClick(answer.isCorrect)}
+                className="w-full"
+              >
+                {answer.text}
+              </Button>
+            ))}
           </div>
-          <div className="text-muted-foreground">
-            {outputUnit ? outputUnit : "Unit"}
+          <div className="mt-4 text-right">
+            <span className="text-muted-foreground">Score: {state.score}</span>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

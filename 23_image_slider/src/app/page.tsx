@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import ImageSlider from "@/components/ImageSlider";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <ImageSlider />
     </div>
   )
 }

@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import QuizApp from "@/components/QuizApp";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <QuizApp />
     </div>
   )
 }

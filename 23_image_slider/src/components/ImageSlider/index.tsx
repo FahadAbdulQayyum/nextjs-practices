@@ -1,215 +1,122 @@
 "use client"; // Enables client-side rendering for this component
 
-// Import necessary hooks from React
-import { useState, ChangeEvent } from "react";
-
-// Import custom UI components from the UI directory
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect, useCallback } from "react"; // Import React hooks
+import Image from "next/image"; // Import Next.js Image component
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel"; // Import custom Carousel components
+import { Button } from "@/components/ui/button"; // Import custom Button component
+import { PlayIcon, PauseIcon } from "lucide-react"; // Import icons from lucide-react
 
-// Conversion rates for various units categorized by length, weight, and volume
-const conversionRates: Record<string, Record<string, number>> = {
-  length: {
-    "Millimeters (mm)": 1,
-    "Centimeters (cm)": 10,
-    "Meters (m)": 1000,
-    "Kilometers (km)": 1000000,
-    "Inches (in)": 25.4,
-    "Feet (ft)": 304.8,
-    "Yards (yd)": 914.4,
-    "Miles (mi)": 1609344,
-  },
-  weight: {
-    "Grams (g)": 1,
-    "Kilograms (kg)": 1000,
-    "Ounces (oz)": 28.3495,
-    "Pounds (lb)": 453.592,
-  },
-  volume: {
-    "Milliliters (ml)": 1,
-    "Liters (l)": 1000,
-    "Fluid Ounces (fl oz)": 29.5735,
-    "Cups (cup)": 240,
-    "Pints (pt)": 473.176,
-    "Quarts (qt)": 946.353,
-    "Gallons (gal)": 3785.41,
-  },
-};
-
-// Unit types categorized by length, weight, and volume
-const unitTypes: Record<string, string[]> = {
-  length: [
-    "Millimeters (mm)",
-    "Centimeters (cm)",
-    "Meters (m)",
-    "Kilometers (km)",
-    "Inches (in)",
-    "Feet (ft)",
-    "Yards (yd)",
-    "Miles (mi)",
-  ],
-  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lb)"],
-  volume: [
-    "Milliliters (ml)",
-    "Liters (l)",
-    "Fluid Ounces (fl oz)",
-    "Cups (cup)",
-    "Pints (pt)",
-    "Quarts (qt)",
-    "Gallons (gal)",
-  ],
-};
-
-// Default export of the UnitConverterComponent function
-export default function UnitConverter() {
-  // State hooks for managing input value, selected units, and the converted value
-  const [inputValue, setInputValue] = useState<number | null>(null);
-  const [inputUnit, setInputUnit] = useState<string | null>(null);
-  const [outputUnit, setOutputUnit] = useState<string | null>(null);
-  const [convertedValue, setConvertedValue] = useState<number | null>(null);
-
-  // Handler for updating the input value state on input change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(parseFloat(e.target.value));
+// Define the ImageData interface
+interface ImageData {
+  id: string;
+  urls: {
+    regular: string;
   };
-
-  // Handler for updating the input unit state on select change
-  const handleInputUnitChange = (value: string): void => {
-    setInputUnit(value);
+  alt_description: string;
+  description: string;
+  user: {
+    name: string;
   };
+}
 
-  // Handler for updating the output unit state on select change
-  const handleOutputUnitChange = (value: string): void => {
-    setOutputUnit(value);
-  };
+export default function ImageSlider() {
+  // State to manage the images fetched from the API
+  const [images, setImages] = useState<ImageData[]>([]);
+  // State to manage the current image index in the carousel
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  // State to manage the play/pause status of the carousel
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const interval = 3000; // Interval for the carousel autoplay
 
-  // Function to convert the input value to the selected output unit
-  const convertValue = (): void => {
-    if (inputValue !== null && inputUnit && outputUnit) {
-      let unitCategory: string | null = null;
-
-      // Determine the unit category (length, weight, volume)
-      for (const category in unitTypes) {
-        if (
-          unitTypes[category].includes(inputUnit) &&
-          unitTypes[category].includes(outputUnit)
-        ) {
-          unitCategory = category;
-          break;
-        }
-      }
-
-      // Perform the conversion if the units are compatible
-      if (unitCategory) {
-        const baseValue = inputValue * conversionRates[unitCategory][inputUnit];
-        const result = baseValue / conversionRates[unitCategory][outputUnit];
-        setConvertedValue(result);
-      } else {
-        setConvertedValue(null);
-        alert("Incompatible unit types selected."); // Alert if units are incompatible
-      }
-    } else {
-      setConvertedValue(null);
-      alert("Please fill all fields."); // Alert if any field is empty
+  // Function to fetch images from Unsplash API
+  const fetchImages = async (): Promise<void> => {
+    try {
+      const response = await fetch(
+        `https://api.unsplash.com/photos?client_id=${process.env.NEXT_PUBLIC_UNSPLASH_API_KEY}&per_page=10`
+      );
+      const data = await response.json();
+      setImages(data);
+    } catch (error) {
+      console.error("Error fetching images:", error);
     }
   };
 
-  // JSX return statement rendering the unit converter UI
+  // useEffect to fetch images when the component mounts
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  // Function to go to the next image
+  const nextImage = useCallback((): void => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]);
+
+  // useEffect to handle the autoplay functionality
+  useEffect(() => {
+    if (isPlaying) {
+      const id = setInterval(nextImage, interval);
+      return () => clearInterval(id);
+    }
+  }, [isPlaying, nextImage]);
+
+  // Function to toggle play/pause status
+  const togglePlayPause = (): void => {
+    setIsPlaying((prevIsPlaying) => !prevIsPlaying);
+  };
+
+  // JSX return statement rendering the Image Slider UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Center the unit converter card within the screen */}
-      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-1 text-center">Unit Converter</h1>
-        <p className="text-sm mb-8 text-center">
-          Convert values between different units.
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-full max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-4">Image Slider</h1>
+        <p className="text-center text-gray-600 mb-8">
+          A simple dynamic image slider/carousel with Unsplash.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Select for input unit */}
-          <div className="space-y-2">
-            <Label htmlFor="input-unit">From</Label>
-            <Select onValueChange={handleInputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+        <Carousel
+          className="rounded-lg overflow-hidden relative"
+        >
+          <CarouselContent>
+            {images?.map((image, index) => (
+              <CarouselItem
+                key={image.id}
+                className={index === currentIndex ? "block" : "hidden"}
+              >
+                <Image
+                  src={image.urls.regular}
+                  alt={image.alt_description}
+                  width={800}
+                  height={400}
+                  className="w-full h-auto object-cover"
+                />
+                <div className="p-2 bg-white/75 text-center">
+                  <h2 className="text-lg font-bold">{image.user.name}</h2>
+                  <p className="text-sm">
+                    {image.description || image.alt_description}
+                  </p>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlayPause}
+              className="bg-white/50 hover:bg-white/75 p-2 rounded-full shadow-md transition-colors"
+            >
+              {isPlaying ? (
+                <PauseIcon className="w-6 h-6 text-gray-800" />
+              ) : (
+                <PlayIcon className="w-6 h-6 text-gray-800" />
+              )}
+              <span className="sr-only">{isPlaying ? "Pause" : "Play"}</span>
+            </Button>
           </div>
-          {/* Select for output unit */}
-          <div className="space-y-2">
-            <Label htmlFor="output-unit">To</Label>
-            <Select onValueChange={handleOutputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Input for value to convert */}
-          <div className="space-y-2 col-span-2">
-            <Label htmlFor="input-value">Value</Label>
-            <Input
-              id="input-value"
-              type="number"
-              placeholder="Enter value"
-              value={inputValue || ""}
-              onChange={handleInputChange}
-              className="w-full"
-            />
-          </div>
-          {/* Button to trigger conversion */}
-          <Button
-            type="button"
-            className="col-span-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={convertValue}
-          >
-            Convert
-          </Button>
-        </div>
-        {/* Display the converted value */}
-        <div className="mt-6 text-center">
-          <div className="text-4xl font-bold">
-            {convertedValue !== null ? convertedValue.toFixed(2) : "0"}
-          </div>
-          <div className="text-muted-foreground">
-            {outputUnit ? outputUnit : "Unit"}
-          </div>
-        </div>
+        </Carousel>
       </div>
     </div>
   );
