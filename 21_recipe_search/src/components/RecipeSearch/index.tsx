@@ -1,216 +1,144 @@
+
 "use client"; // Enables client-side rendering for this component
 
-// Import necessary hooks from React
-import { useState, ChangeEvent } from "react";
+import React, { useState, FormEvent } from "react"; // Import useState and FormEvent from React
+import { Input } from "@/components/ui/input"; // Import custom Input component
+import { Button } from "@/components/ui/button"; // Import custom Button component
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import custom Card components
+import Link from "next/link"; // Import Link component from Next.js
+import { SearchIcon } from "lucide-react"; // Import SearchIcon from lucide-react
+import ClipLoader from "react-spinners/ClipLoader";
+import Image from "next/image"; // Import Next.js Image component
 
-// Import custom UI components from the UI directory
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+// Define the Recipe interface
+interface Recipe {
+  uri: string;
+  label: string;
+  image: string;
+  ingredientLines: string[];
+  ingredients: { text: string }[];
+  url: string;
+}
 
-// Conversion rates for various units categorized by length, weight, and volume
-const conversionRates: Record<string, Record<string, number>> = {
-  length: {
-    "Millimeters (mm)": 1,
-    "Centimeters (cm)": 10,
-    "Meters (m)": 1000,
-    "Kilometers (km)": 1000000,
-    "Inches (in)": 25.4,
-    "Feet (ft)": 304.8,
-    "Yards (yd)": 914.4,
-    "Miles (mi)": 1609344,
-  },
-  weight: {
-    "Grams (g)": 1,
-    "Kilograms (kg)": 1000,
-    "Ounces (oz)": 28.3495,
-    "Pounds (lb)": 453.592,
-  },
-  volume: {
-    "Milliliters (ml)": 1,
-    "Liters (l)": 1000,
-    "Fluid Ounces (fl oz)": 29.5735,
-    "Cups (cup)": 240,
-    "Pints (pt)": 473.176,
-    "Quarts (qt)": 946.353,
-    "Gallons (gal)": 3785.41,
-  },
-};
+// Example search terms
+const examples = [
+  "Biryani",
+  "Chicken Karahi",
+  "Nihari",
+  "Haleem",
+  "Chapli Kabab",
+];
 
-// Unit types categorized by length, weight, and volume
-const unitTypes: Record<string, string[]> = {
-  length: [
-    "Millimeters (mm)",
-    "Centimeters (cm)",
-    "Meters (m)",
-    "Kilometers (km)",
-    "Inches (in)",
-    "Feet (ft)",
-    "Yards (yd)",
-    "Miles (mi)",
-  ],
-  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lb)"],
-  volume: [
-    "Milliliters (ml)",
-    "Liters (l)",
-    "Fluid Ounces (fl oz)",
-    "Cups (cup)",
-    "Pints (pt)",
-    "Quarts (qt)",
-    "Gallons (gal)",
-  ],
-};
+export default function RecipeSearch() {
+  // State to manage the search query
+  const [query, setQuery] = useState<string>("");
+  // State to manage the list of fetched recipes
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  // State to manage the loading state during the API fetch
+  const [loading, setLoading] = useState<boolean>(false);
+  // State to manage if a search has been performed
+  const [searched, setSearched] = useState<boolean>(false);
 
-// Default export of the UnitConverterComponent function
-export default function UnitConverter() {
-  // State hooks for managing input value, selected units, and the converted value
-  const [inputValue, setInputValue] = useState<number | null>(null);
-  const [inputUnit, setInputUnit] = useState<string | null>(null);
-  const [outputUnit, setOutputUnit] = useState<string | null>(null);
-  const [convertedValue, setConvertedValue] = useState<number | null>(null);
-
-  // Handler for updating the input value state on input change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(parseFloat(e.target.value));
-  };
-
-  // Handler for updating the input unit state on select change
-  const handleInputUnitChange = (value: string): void => {
-    setInputUnit(value);
-  };
-
-  // Handler for updating the output unit state on select change
-  const handleOutputUnitChange = (value: string): void => {
-    setOutputUnit(value);
-  };
-
-  // Function to convert the input value to the selected output unit
-  const convertValue = (): void => {
-    if (inputValue !== null && inputUnit && outputUnit) {
-      let unitCategory: string | null = null;
-
-      // Determine the unit category (length, weight, volume)
-      for (const category in unitTypes) {
-        if (
-          unitTypes[category].includes(inputUnit) &&
-          unitTypes[category].includes(outputUnit)
-        ) {
-          unitCategory = category;
-          break;
-        }
-      }
-
-      // Perform the conversion if the units are compatible
-      if (unitCategory) {
-        const baseValue = inputValue * conversionRates[unitCategory][inputUnit];
-        const result = baseValue / conversionRates[unitCategory][outputUnit];
-        setConvertedValue(result);
-      } else {
-        setConvertedValue(null);
-        alert("Incompatible unit types selected."); // Alert if units are incompatible
-      }
-    } else {
-      setConvertedValue(null);
-      alert("Please fill all fields."); // Alert if any field is empty
+  // Function to handle the search form submission
+  const handleSearch = async (event: FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setSearched(true);
+    setRecipes([]); // Clear previous recipes
+    try {
+      const response = await fetch(
+        `https://api.edamam.com/search?q=${query}&app_id=${process.env.NEXT_PUBLIC_EDAMAM_APP_ID}&app_key=${process.env.NEXT_PUBLIC_EDAMAM_APP_KEY}`
+      );
+      const data = await response.json();
+      setRecipes(data.hits.map((hit: { recipe: Recipe }) => hit.recipe));
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
     }
+    setLoading(false);
   };
 
-  // JSX return statement rendering the unit converter UI
+  // JSX return statement rendering the Recipe Search UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Center the unit converter card within the screen */}
-      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-1 text-center">Unit Converter</h1>
-        <p className="text-sm mb-8 text-center">
-          Convert values between different units.
+    <div className="flex flex-col h-full w-full max-w-6xl mx-auto p-4 md:p-6">
+      {/* Header section */}
+      <header className="flex flex-col items-center mb-6">
+        <h1 className="text-3xl font-bold mb-2">Recipe Search</h1>
+        <p className="text-lg mb-4">
+          Find delicious recipes by ingredients you have at home.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Select for input unit */}
-          <div className="space-y-2">
-            <Label htmlFor="input-unit">From</Label>
-            <Select onValueChange={handleInputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Example search terms */}
+        <div className="mb-4">
+          <p>Try searching for:</p>
+          <div className="flex space-x-2">
+            {examples.map((example) => (
+              <span
+                key={example}
+                className="px-2 py-1 bg-gray-200 rounded-md cursor-pointer"
+                onClick={() => setQuery(example)}
+              >
+                {example}
+              </span>
+            ))}
           </div>
-          {/* Select for output unit */}
-          <div className="space-y-2">
-            <Label htmlFor="output-unit">To</Label>
-            <Select onValueChange={handleOutputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Input for value to convert */}
-          <div className="space-y-2 col-span-2">
-            <Label htmlFor="input-value">Value</Label>
-            <Input
-              id="input-value"
-              type="number"
-              placeholder="Enter value"
-              value={inputValue || ""}
-              onChange={handleInputChange}
-              className="w-full"
-            />
-          </div>
-          {/* Button to trigger conversion */}
+        </div>
+        {/* Search form */}
+        <form className="relative w-full max-w-md mb-6" onSubmit={handleSearch}>
+          <Input
+            type="search"
+            placeholder="Search by ingredient..."
+            className="pr-10"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
           <Button
-            type="button"
-            className="col-span-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={convertValue}
+            type="submit"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2"
           >
-            Convert
+            <SearchIcon className="w-5 h-5" />
           </Button>
+        </form>
+      </header>
+      {/* Loading spinner */}
+      {loading ? (
+        <div className="flex flex-col justify-center items-center w-full h-full">
+          <ClipLoader className="w-10 h-10 mb-4" />
+          <p>Loading recipes, please wait...</p>
         </div>
-        {/* Display the converted value */}
-        <div className="mt-6 text-center">
-          <div className="text-4xl font-bold">
-            {convertedValue !== null ? convertedValue.toFixed(2) : "0"}
-          </div>
-          <div className="text-muted-foreground">
-            {outputUnit ? outputUnit : "Unit"}
-          </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Message for no recipes found */}
+          {searched && recipes.length === 0 && (
+            <p>No recipes found. Try searching with different ingredients.</p>
+          )}
+          {/* Display list of recipes */}
+          {recipes.map((recipe) => (
+            <Card className="group relative" key={recipe.uri}>
+              <Image
+                src={recipe.image}
+                alt={recipe.label}
+                width={400}
+                height={300}
+                className="rounded-t-lg object-cover w-full h-48 group-hover:opacity-50 transition-opacity"
+              />
+              <CardContent className="p-4">
+                <h2 className="text-xl font-bold mb-2">{recipe.label}</h2>
+                <p className="text-muted-foreground line-clamp-2">
+                  {recipe.ingredientLines.join(", ")}
+                </p>
+              </CardContent>
+              <Link
+                href={recipe.url}
+                className="absolute inset-0 z-10"
+                prefetch={false}
+              >
+                <span className="sr-only">View recipe</span>
+              </Link>
+            </Card>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

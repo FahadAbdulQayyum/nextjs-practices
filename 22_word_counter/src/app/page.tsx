@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import WordCounter from "@/components/WordCounter";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <WordCounter />
     </div>
   )
 }
