@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import UrlShortener from "@/components/UrlShortener";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <UrlShortener />
     </div>
   )
 }

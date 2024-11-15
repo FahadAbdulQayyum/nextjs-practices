@@ -1,215 +1,105 @@
+
 "use client"; // Enables client-side rendering for this component
 
-// Import necessary hooks from React
-import { useState, ChangeEvent } from "react";
+import React, { useState } from "react"; // Import React and useState hook
+import { Input } from "@/components/ui/input"; // Import custom Input component
+import { Button } from "@/components/ui/button"; // Import custom Button component
+import { CopyIcon } from "lucide-react"; // Import CopyIcon from lucide-react
+import axios from "axios"; // Import axios for HTTP requests
 
-// Import custom UI components from the UI directory
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+const BITLY_API_URL = "https://api-ssl.bitly.com/v4/shorten";
+const BITLY_ACCESS_TOKEN = process.env.NEXT_PUBLIC_BITLY_ACCESS_TOKEN;
 
-// Conversion rates for various units categorized by length, weight, and volume
-const conversionRates: Record<string, Record<string, number>> = {
-  length: {
-    "Millimeters (mm)": 1,
-    "Centimeters (cm)": 10,
-    "Meters (m)": 1000,
-    "Kilometers (km)": 1000000,
-    "Inches (in)": 25.4,
-    "Feet (ft)": 304.8,
-    "Yards (yd)": 914.4,
-    "Miles (mi)": 1609344,
-  },
-  weight: {
-    "Grams (g)": 1,
-    "Kilograms (kg)": 1000,
-    "Ounces (oz)": 28.3495,
-    "Pounds (lb)": 453.592,
-  },
-  volume: {
-    "Milliliters (ml)": 1,
-    "Liters (l)": 1000,
-    "Fluid Ounces (fl oz)": 29.5735,
-    "Cups (cup)": 240,
-    "Pints (pt)": 473.176,
-    "Quarts (qt)": 946.353,
-    "Gallons (gal)": 3785.41,
-  },
-};
+export default function URLShortener() {
+  const [longUrl, setLongUrl] = useState<string>(""); // State to manage the long URL input
+  const [shortUrl, setShortUrl] = useState<string>(""); // State to manage the shortened URL
+  const [error, setError] = useState<string>(""); // State to manage error messages
 
-// Unit types categorized by length, weight, and volume
-const unitTypes: Record<string, string[]> = {
-  length: [
-    "Millimeters (mm)",
-    "Centimeters (cm)",
-    "Meters (m)",
-    "Kilometers (km)",
-    "Inches (in)",
-    "Feet (ft)",
-    "Yards (yd)",
-    "Miles (mi)",
-  ],
-  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lb)"],
-  volume: [
-    "Milliliters (ml)",
-    "Liters (l)",
-    "Fluid Ounces (fl oz)",
-    "Cups (cup)",
-    "Pints (pt)",
-    "Quarts (qt)",
-    "Gallons (gal)",
-  ],
-};
+  // Function to handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(""); // Reset error state
+    setShortUrl(""); // Reset shortened URL state
 
-// Default export of the UnitConverterComponent function
-export default function UnitConverter() {
-  // State hooks for managing input value, selected units, and the converted value
-  const [inputValue, setInputValue] = useState<number | null>(null);
-  const [inputUnit, setInputUnit] = useState<string | null>(null);
-  const [outputUnit, setOutputUnit] = useState<string | null>(null);
-  const [convertedValue, setConvertedValue] = useState<number | null>(null);
-
-  // Handler for updating the input value state on input change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(parseFloat(e.target.value));
-  };
-
-  // Handler for updating the input unit state on select change
-  const handleInputUnitChange = (value: string): void => {
-    setInputUnit(value);
-  };
-
-  // Handler for updating the output unit state on select change
-  const handleOutputUnitChange = (value: string): void => {
-    setOutputUnit(value);
-  };
-
-  // Function to convert the input value to the selected output unit
-  const convertValue = (): void => {
-    if (inputValue !== null && inputUnit && outputUnit) {
-      let unitCategory: string | null = null;
-
-      // Determine the unit category (length, weight, volume)
-      for (const category in unitTypes) {
-        if (
-          unitTypes[category].includes(inputUnit) &&
-          unitTypes[category].includes(outputUnit)
-        ) {
-          unitCategory = category;
-          break;
+    try {
+      const response = await axios.post(
+        BITLY_API_URL,
+        {
+          long_url: longUrl,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${BITLY_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
         }
-      }
+      );
 
-      // Perform the conversion if the units are compatible
-      if (unitCategory) {
-        const baseValue = inputValue * conversionRates[unitCategory][inputUnit];
-        const result = baseValue / conversionRates[unitCategory][outputUnit];
-        setConvertedValue(result);
-      } else {
-        setConvertedValue(null);
-        alert("Incompatible unit types selected."); // Alert if units are incompatible
-      }
-    } else {
-      setConvertedValue(null);
-      alert("Please fill all fields."); // Alert if any field is empty
+      setShortUrl(response.data.link); // Set the shortened URL state with the response data
+    } catch (err) {
+      setError("Failed to shorten the URL. Please try again."); // Set error state if the request fails
     }
   };
 
-  // JSX return statement rendering the unit converter UI
+  // Function to handle copying the shortened URL to clipboard
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shortUrl);
+    alert("Successfully Copied the Short URL!"); // Alert user that the URL has been copied
+  };
+
+  // JSX return statement rendering the URL Shortener UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Center the unit converter card within the screen */}
-      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-1 text-center">Unit Converter</h1>
-        <p className="text-sm mb-8 text-center">
-          Convert values between different units.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Select for input unit */}
-          <div className="space-y-2">
-            <Label htmlFor="input-unit">From</Label>
-            <Select onValueChange={handleInputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Select for output unit */}
-          <div className="space-y-2">
-            <Label htmlFor="output-unit">To</Label>
-            <Select onValueChange={handleOutputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Input for value to convert */}
-          <div className="space-y-2 col-span-2">
-            <Label htmlFor="input-value">Value</Label>
+    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-primary to-secondary">
+      <div className="max-w-md w-full space-y-4 p-6 rounded-lg bg-background shadow-lg">
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-bold">URL Shortener</h1>
+          <p className="text-muted-foreground">
+            Paste your long URL and get a short, shareable link.
+          </p>
+        </div>
+        {/* Form to input and submit the long URL */}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="relative">
             <Input
-              id="input-value"
-              type="number"
-              placeholder="Enter value"
-              value={inputValue || ""}
-              onChange={handleInputChange}
-              className="w-full"
+              type="url"
+              placeholder="Paste your long URL here"
+              value={longUrl}
+              onChange={(e) => setLongUrl(e.target.value)}
+              className="pr-16"
+              required
             />
+            <Button
+              type="submit"
+              className="absolute top-1/2 right-2 -translate-y-1/2"
+            >
+              Shorten
+            </Button>
           </div>
-          {/* Button to trigger conversion */}
-          <Button
-            type="button"
-            className="col-span-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={convertValue}
-          >
-            Convert
-          </Button>
-        </div>
-        {/* Display the converted value */}
-        <div className="mt-6 text-center">
-          <div className="text-4xl font-bold">
-            {convertedValue !== null ? convertedValue.toFixed(2) : "0"}
-          </div>
-          <div className="text-muted-foreground">
-            {outputUnit ? outputUnit : "Unit"}
-          </div>
-        </div>
+          {/* Display error message if any */}
+          {error && <div className="text-red-500 text-center">{error}</div>}
+          {/* Display the shortened URL and copy button */}
+          {shortUrl && (
+            <div className="flex items-center space-x-2">
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  value={shortUrl}
+                  readOnly
+                  className="cursor-pointer"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:bg-muted/50"
+                onClick={handleCopy}
+              >
+                <CopyIcon className="w-5 h-5" />
+                <span className="sr-only">Copy</span>
+              </Button>
+            </div>
+          )}
+        </form>
       </div>
     </div>
   );

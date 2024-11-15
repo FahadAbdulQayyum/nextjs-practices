@@ -1,214 +1,215 @@
+
 "use client"; // Enables client-side rendering for this component
 
-// Import necessary hooks from React
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // Import React hooks
+import { Button } from "@/components/ui/button"; // Import custom Button component
+import { PauseIcon, PlayIcon, RefreshCcwIcon } from "lucide-react"; // Import icons from lucide-react
 
-// Import custom UI components from the UI directory
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+// Define the possible game states
+enum GameState {
+  START,
+  PAUSE,
+  RUNNING,
+  GAME_OVER,
+}
 
-// Conversion rates for various units categorized by length, weight, and volume
-const conversionRates: Record<string, Record<string, number>> = {
-  length: {
-    "Millimeters (mm)": 1,
-    "Centimeters (cm)": 10,
-    "Meters (m)": 1000,
-    "Kilometers (km)": 1000000,
-    "Inches (in)": 25.4,
-    "Feet (ft)": 304.8,
-    "Yards (yd)": 914.4,
-    "Miles (mi)": 1609344,
-  },
-  weight: {
-    "Grams (g)": 1,
-    "Kilograms (kg)": 1000,
-    "Ounces (oz)": 28.3495,
-    "Pounds (lb)": 453.592,
-  },
-  volume: {
-    "Milliliters (ml)": 1,
-    "Liters (l)": 1000,
-    "Fluid Ounces (fl oz)": 29.5735,
-    "Cups (cup)": 240,
-    "Pints (pt)": 473.176,
-    "Quarts (qt)": 946.353,
-    "Gallons (gal)": 3785.41,
-  },
-};
+// Define the directions for the snake movement
+enum Direction {
+  UP,
+  DOWN,
+  LEFT,
+  RIGHT,
+}
 
-// Unit types categorized by length, weight, and volume
-const unitTypes: Record<string, string[]> = {
-  length: [
-    "Millimeters (mm)",
-    "Centimeters (cm)",
-    "Meters (m)",
-    "Kilometers (km)",
-    "Inches (in)",
-    "Feet (ft)",
-    "Yards (yd)",
-    "Miles (mi)",
-  ],
-  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lb)"],
-  volume: [
-    "Milliliters (ml)",
-    "Liters (l)",
-    "Fluid Ounces (fl oz)",
-    "Cups (cup)",
-    "Pints (pt)",
-    "Quarts (qt)",
-    "Gallons (gal)",
-  ],
-};
+// Define the Position interface
+interface Position {
+  x: number;
+  y: number;
+}
 
-// Default export of the UnitConverterComponent function
-export default function UnitConverter() {
-  // State hooks for managing input value, selected units, and the converted value
-  const [inputValue, setInputValue] = useState<number | null>(null);
-  const [inputUnit, setInputUnit] = useState<string | null>(null);
-  const [outputUnit, setOutputUnit] = useState<string | null>(null);
-  const [convertedValue, setConvertedValue] = useState<number | null>(null);
+// Initial state for the snake and food
+const initialSnake: Position[] = [{ x: 0, y: 0 }];
+const initialFood: Position = { x: 5, y: 5 };
 
-  // Handler for updating the input value state on input change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(parseFloat(e.target.value));
-  };
+export default function SnakeGame() {
+  // State to manage the game
+  const [gameState, setGameState] = useState<GameState>(GameState.START);
+  const [snake, setSnake] = useState<Position[]>(initialSnake);
+  const [food, setFood] = useState<Position>(initialFood);
+  const [direction, setDirection] = useState<Direction>(Direction.RIGHT);
+  const [score, setScore] = useState<number>(0);
+  const [highScore, setHighScore] = useState<number>(0);
+  const gameInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Handler for updating the input unit state on select change
-  const handleInputUnitChange = (value: string): void => {
-    setInputUnit(value);
-  };
+  // Function to move the snake
+  const moveSnake = useCallback(() => {
+    setSnake((prevSnake) => {
+      const newSnake = [...prevSnake];
+      const head = newSnake[0];
+      let newHead: Position;
 
-  // Handler for updating the output unit state on select change
-  const handleOutputUnitChange = (value: string): void => {
-    setOutputUnit(value);
-  };
-
-  // Function to convert the input value to the selected output unit
-  const convertValue = (): void => {
-    if (inputValue !== null && inputUnit && outputUnit) {
-      let unitCategory: string | null = null;
-
-      // Determine the unit category (length, weight, volume)
-      for (const category in unitTypes) {
-        if (
-          unitTypes[category].includes(inputUnit) &&
-          unitTypes[category].includes(outputUnit)
-        ) {
-          unitCategory = category;
+      switch (direction) {
+        case Direction.UP:
+          newHead = { x: head.x, y: head.y - 1 };
           break;
-        }
+        case Direction.DOWN:
+          newHead = { x: head.x, y: head.y + 1 };
+          break;
+        case Direction.LEFT:
+          newHead = { x: head.x - 1, y: head.y };
+          break;
+        case Direction.RIGHT:
+          newHead = { x: head.x + 1, y: head.y };
+          break;
+        default:
+          return newSnake;
       }
 
-      // Perform the conversion if the units are compatible
-      if (unitCategory) {
-        const baseValue = inputValue * conversionRates[unitCategory][inputUnit];
-        const result = baseValue / conversionRates[unitCategory][outputUnit];
-        setConvertedValue(result);
+      newSnake.unshift(newHead);
+
+      if (newHead.x === food.x && newHead.y === food.y) {
+        // Snake eats the food
+        setFood({
+          x: Math.floor(Math.random() * 10),
+          y: Math.floor(Math.random() * 10),
+        });
+        setScore((prevScore) => prevScore + 1);
       } else {
-        setConvertedValue(null);
-        alert("Incompatible unit types selected."); // Alert if units are incompatible
+        newSnake.pop(); // Remove the last part of the snake's body
       }
+
+      return newSnake;
+    });
+  }, [direction, food]);
+
+  // Function to handle key press events
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "ArrowUp":
+          if (direction !== Direction.DOWN) setDirection(Direction.UP);
+          break;
+        case "ArrowDown":
+          if (direction !== Direction.UP) setDirection(Direction.DOWN);
+          break;
+        case "ArrowLeft":
+          if (direction !== Direction.RIGHT) setDirection(Direction.LEFT);
+          break;
+        case "ArrowRight":
+          if (direction !== Direction.LEFT) setDirection(Direction.RIGHT);
+          break;
+      }
+    },
+    [direction]
+  );
+
+  // useEffect to handle the game interval and key press events
+  useEffect(() => {
+    if (gameState === GameState.RUNNING) {
+      gameInterval.current = setInterval(moveSnake, 200);
+      document.addEventListener("keydown", handleKeyPress);
     } else {
-      setConvertedValue(null);
-      alert("Please fill all fields."); // Alert if any field is empty
+      if (gameInterval.current) clearInterval(gameInterval.current);
+      document.removeEventListener("keydown", handleKeyPress);
     }
+
+    return () => {
+      if (gameInterval.current) clearInterval(gameInterval.current);
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [gameState, moveSnake, handleKeyPress]);
+
+  // Function to start the game
+  const startGame = () => {
+    setSnake(initialSnake);
+    setFood(initialFood);
+    setScore(0);
+    setDirection(Direction.RIGHT);
+    setGameState(GameState.RUNNING);
   };
 
-  // JSX return statement rendering the unit converter UI
+  // Function to pause or resume the game
+  const pauseGame = () => {
+    setGameState(
+      gameState === GameState.RUNNING ? GameState.PAUSE : GameState.RUNNING
+    );
+  };
+
+  // Function to reset the game
+  const resetGame = () => {
+    setGameState(GameState.START);
+    setSnake(initialSnake);
+    setFood(initialFood);
+    setScore(0);
+  };
+
+  // useEffect to update the high score
+  useEffect(() => {
+    if (score > highScore) {
+      setHighScore(score);
+    }
+  }, [score, highScore]);
+
+  // JSX return statement rendering the Snake Game UI
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Center the unit converter card within the screen */}
-      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-1 text-center">Unit Converter</h1>
-        <p className="text-sm mb-8 text-center">
-          Convert values between different units.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Select for input unit */}
-          <div className="space-y-2">
-            <Label htmlFor="input-unit">From</Label>
-            <Select onValueChange={handleInputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-[#0F0F0F] to-[#1E1E1E]">
+      <div className="bg-[#1E1E1E] rounded-lg shadow-lg p-8 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-3xl font-bold text-[#FF00FF]">Snake Game</div>
+          <div className="flex gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#00FFFF]"
+              onClick={startGame}
+            >
+              <PlayIcon className="w-6 h-6" />
+              <span className="sr-only">Start</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#00FFFF]"
+              onClick={pauseGame}
+            >
+              <PauseIcon className="w-6 h-6" />
+              <span className="sr-only">Pause/Resume</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#00FFFF]"
+              onClick={resetGame}
+            >
+              <RefreshCcwIcon className="w-6 h-6" />
+              <span className="sr-only">Reset</span>
+            </Button>
           </div>
-          {/* Select for output unit */}
-          <div className="space-y-2">
-            <Label htmlFor="output-unit">To</Label>
-            <Select onValueChange={handleOutputUnitChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(unitTypes).map(([category, units]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectLabel>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Input for value to convert */}
-          <div className="space-y-2 col-span-2">
-            <Label htmlFor="input-value">Value</Label>
-            <Input
-              id="input-value"
-              type="number"
-              placeholder="Enter value"
-              value={inputValue || ""}
-              onChange={handleInputChange}
-              className="w-full"
-            />
-          </div>
-          {/* Button to trigger conversion */}
-          <Button
-            type="button"
-            className="col-span-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={convertValue}
-          >
-            Convert
-          </Button>
         </div>
-        {/* Display the converted value */}
-        <div className="mt-6 text-center">
-          <div className="text-4xl font-bold">
-            {convertedValue !== null ? convertedValue.toFixed(2) : "0"}
-          </div>
-          <div className="text-muted-foreground">
-            {outputUnit ? outputUnit : "Unit"}
-          </div>
+        <div className="bg-[#0F0F0F] rounded-lg p-4 grid grid-cols-10 gap-1">
+          {Array.from({ length: 100 }).map((_, i) => {
+            const x = i % 10;
+            const y = Math.floor(i / 10);
+            const isSnakePart = snake.some(
+              (part) => part.x === x && part.y === y
+            );
+            const isFood = food.x === x && food.y === y;
+            return (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded-sm ${isSnakePart
+                    ? "bg-[#FF00FF]"
+                    : isFood
+                      ? "bg-[#00FFFF]"
+                      : "bg-[#1E1E1E]"
+                  }`}
+              />
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-between mt-6 text-[#00FFFF]">
+          <div>Score: {score}</div>
+          <div>High Score: {highScore}</div>
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <AudioPlayer />
     </div>
   )
 }

@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import RandomUserGenerator from "@/components/RandomUserGenerator";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <RandomUserGenerator />
     </div>
   )
 }

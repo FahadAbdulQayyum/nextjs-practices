@@ -1,9 +1,9 @@
-import UnitConverter from "@/components/UnitConverter";
+import SnakeGame from "@/components/SnakeGame";
 
 export default function Home() {
   return (
     <div>
-      <UnitConverter />
+      <SnakeGame />
     </div>
   )
 }
